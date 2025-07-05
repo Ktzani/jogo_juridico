@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: jogo-memoria-tributaria
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production

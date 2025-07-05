@@ -7,10 +7,24 @@ const { initDatabase, savePlayer, getAllPlayers, getPlayerStats, getPainPointsAn
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configurações para produção
+if (process.env.NODE_ENV === 'production') {
+    // Trust proxy headers (para HTTPS)
+    app.set('trust proxy', 1);
+    
+    // Security headers
+    app.use((req, res, next) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('X-Frame-Options', 'DENY');
+        res.setHeader('X-XSS-Protection', '1; mode=block');
+        next();
+    });
+}
+
 // Middlewares
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 // Servir arquivos estáticos da pasta public
 app.use(express.static(path.join(__dirname, 'public')));
@@ -21,6 +35,17 @@ initDatabase();
 // Rota principal - servir o jogo
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'jogo.html'));
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        version: process.version
+    });
 });
 
 // API Routes
