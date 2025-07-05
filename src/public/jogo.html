@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Memória Tributária - Fiscofy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #c8d1e1 0%, #b4c4d8 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #0d2d52;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(13, 45, 82, 0.2);
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .header h1:hover {
+            transform: scale(1.02);
+        }
+
+        .header h1:active {
+            transform: scale(0.98);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        /* Estilos para tela de cadastro */
+        .registration-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .registration-form {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(13, 45, 82, 0.1);
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+            border: 2px solid #1e40af;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group.full-width {
+            flex: 100%;
+        }
+
+        .form-group label {
+            display: block;
+            color: #374151;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .form-actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(145deg, #1e40af, #1e3a8a);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .registration-info {
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+            border-left: 4px solid #1e40af;
+        }
+
+        .registration-info p {
+            margin: 8px 0;
+            color: #1e40af;
+            font-size: 0.9em;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            font-weight: normal;
+            font-size: 13px;
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1e40af;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos do jogo (mantidos da versão original) */
+        .game-screen {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-info {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .score, .moves, .timer {
+            background: rgba(13, 45, 82, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(13, 45, 82, 0.2);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 600px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            position: relative;
+            min-height: 120px;
+            border: 2px solid #1e40af;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        .card.matched.flipped .card-front {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            border: 2px solid #1e40af;
+        }
+
+        .card.matched .card-front .card-icon,
+        .card.matched .card-front .card-title {
+            color: #1e40af;
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            padding: 10px;
+        }
+
+        .card-back {
+            background: linear-gradient(145deg, #1e40af, #1e3a8a);
+            color: white;
+            font-size: 2em;
+        }
+
+        .card-front {
+            transform: rotateY(180deg);
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            color: #333;
+        }
+
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 5px;
+        }
+
+        .card-title {
+            font-size: 0.9em;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(145deg, #1e40af, #1e3a8a);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 45, 82, 0.8);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal h2 {
+            color: #1e40af;
+            margin-bottom: 20px;
+        }
+
+        .admin-btn {
+            background: linear-gradient(145deg, #dc2626, #b91c1c) !important;
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3); }
+            50% { box-shadow: 0 4px 25px rgba(220, 38, 38, 0.6); }
+            100% { box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .registration-form {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+
+            .game-board {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+            }
+            
+            .card {
+                min-height: 80px;
+            }
+            
+            .card-icon {
+                font-size: 2em;
+            }
+            
+            .card-title {
+                font-size: 0.7em;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de Cadastro Inicial -->
+    <div id="registrationScreen" class="registration-screen">
+        <div class="header">
+            <h1 id="gameTitle" onclick="handleTitleTap()">🎮 Jogo da Memória Tributária</h1>
+            <p>Complete seu cadastro para participar e concorrer ao AirPods!</p>
+        </div>
+
+        <div class="registration-form">
+            <h3 style="color: #1e40af; text-align: center; margin-bottom: 25px;">📋 Cadastro para Participação</h3>
+            
+            <form id="initialRegistrationForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>CNPJ: *</label>
+                        <input type="text" id="regCNPJ" required placeholder="00.000.000/0000-00" maxlength="18">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Regime Tributário: *</label>
+                        <select id="regRegime" required>
+                            <option value="">Selecione</option>
+                            <option value="MEI">MEI</option>
+                            <option value="Simples Nacional">Simples Nacional</option>
+                            <option value="Lucro Presumido">Lucro Presumido</option>
+                            <option value="Lucro Real">Lucro Real</option>
+                            <option value="Não sei">Não sei</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Faturamento Médio: *</label>
+                        <select id="regFaturamento" required>
+                            <option value="">Selecione</option>
+                            <option value="Menos de 50K">Menos de 50K</option>
+                            <option value="50K - 100K">50K - 100K</option>
+                            <option value="100K - 500K">100K - 500K</option>
+                            <option value="500K - 1M">500K - 1M</option>
+                            <option value="1M - 5M">1M - 5M</option>
+                            <option value="5M - 10M">5M - 10M</option>
+                            <option value="10M - 50M">10M - 50M</option>
+                            <option value="Mais de 50M">Mais de 50M</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Nome Completo: *</label>
+                        <input type="text" id="regNome" required maxlength="50">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Telefone/WhatsApp: *</label>
+                        <input type="tel" id="regTelefone" required placeholder="(11) 99999-9999">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Cargo/Função: *</label>
+                        <input type="text" id="regCargo" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>E-mail: *</label>
+                        <input type="email" id="regEmail" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Instagram: *</label>
+                        <input type="text" id="regInstagram" required placeholder="@seuinstagram">
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Qual a sua maior dor hoje? * (Marque uma ou mais opções)</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dor1" value="Dívidas com a Receita/PGFN">
+                            <label for="dor1">Dívidas com a Receita/PGFN</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dor2" value="Execuções fiscais em andamento">
+                            <label for="dor2">Execuções fiscais em andamento</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dor3" value="Recuperação de tributos pagos indevidamente">
+                            <label for="dor3">Recuperação de tributos pagos indevidamente</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dor4" value="Planejamento tributário">
+                            <label for="dor4">Planejamento tributário</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dor5" value="Registrar minha marca">
+                            <label for="dor5">Registrar minha marca</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dor6" value="Abertura ou reestruturação societária">
+                            <label for="dor6">Abertura ou reestruturação societária</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dor7" value="Holding Familiar">
+                            <label for="dor7">Holding Familiar</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dor8" value="Outro">
+                            <label for="dor8">Outro</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="loading" id="loadingRegistration">
+                    <div class="spinner"></div>
+                    <p>Salvando seus dados...</p>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" onclick="submitInitialRegistration()" class="btn-primary" id="submitBtn">
+                        🎮 Iniciar Jogo da Memória
+                    </button>
+                </div>
+            </form>
+
+            <div class="registration-info">
+                <p>📝 <strong>Todos os campos são obrigatórios</strong></p>
+                <p>🎁 Ao completar o cadastro, você estará automaticamente concorrendo ao <strong>AirPods</strong>!</p>
+                <p>🔒 Seus dados são confidenciais e serão usados apenas pela Fiscofy</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela do Jogo (inicialmente oculta) -->
+    <div id="gameScreen" class="game-screen">
+        <div class="header">
+            <h1>🎮 Jogo da Memória Tributária</h1>
+            <p>Teste sua memória com os principais temas fiscais do e-commerce!</p>
+        </div>
+
+        <div class="game-info">
+            <div class="score">Pontos: <span id="score">0</span></div>
+            <div class="moves">Jogadas: <span id="moves">0</span></div>
+            <div class="timer">Tempo: <span id="timer">00:00</span></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="startGame()">🎮 Novo Jogo</button>
+            <button class="btn" onclick="showInstructions()">❓ Como Jogar</button>
+            <button class="btn" onclick="showRanking()">🏆 Ranking Geral</button>
+            <button class="btn admin-btn" id="resetBtn" onclick="resetRanking()" style="display: none; background: #dc2626;">🗑️ Limpar Ranking</button>
+        </div>
+
+        <div class="game-board" id="gameBoard"></div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Como Jogar</h2>
+            <p id="modalText">
+                🎯 <strong>Objetivo:</strong> Encontre todos os pares de cartas relacionadas aos temas tributários!<br><br>
+                🔄 <strong>Regras:</strong><br>
+                • Clique em duas cartas para virá-las<br>
+                • Se fizerem par, elas permanecerão viradas<br>
+                • Se não fizerem par, virarão novamente<br>
+                • Complete todos os pares no menor número de jogadas!<br><br>
+                🏆 <strong>Pontuação:</strong><br>
+                • Par correto: +100 pontos<br>
+                • Bônus de tempo: pontos extras por rapidez<br>
+                • Menos jogadas = mais pontos!
+            </p>
+            <button class="btn" onclick="closeModal()">Entendi!</button>
+        </div>
+    </div>
+
+    <script>
+        const cards = [
+            { id: 1, icon: "🏪", title: "Marketplace", info: "Taxas do Mercado Livre podem ser deduzidas da base de cálculo de alguns tributos!" },
+            { id: 2, icon: "📊", title: "Simples Nacional", info: "Empresas acima de R$ 150k/mês podem economizar saindo do Simples Nacional!" },
+            { id: 3, icon: "💰", title: "Recuperação de Créditos", info: "Recupere tributos pagos indevidamente dos últimos 5 anos!" },
+            { id: 4, icon: "🗺️", title: "ICMS Interestadual", info: "Vendas para outros estados têm regras específicas de tributação!" },
+            { id: 5, icon: "⚡", title: "Despesas Operacionais", info: "ICMS da conta de luz pode virar crédito tributário!" },
+            { id: 6, icon: "↩️", title: "Produtos Devolvidos", info: "Tributos pagos podem ser recuperados quando há devolução de mercadorias!" },
+            { id: 7, icon: "🎯", title: "Planejamento Fiscal", info: "A revisão tributária reduz custos e libera caixa para o seu negócio!" },
+            { id: 8, icon: "⚖️", title: "Reforma Tributária", info: "Reforma Tributária permite usar créditos de PIS/COFINS na CBS." }
+        ];
+
+        let gameBoard = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let score = 0;
+        let startTime;
+        let timerInterval;
+        let playerRanking = [];
+        let adminMode = false;
+        let titleTapCount = 0;
+        let titleTapTimer = null;
+        let currentPlayer = null;
+        let gameStarted = false;
+
+        // URL base da API (ajustar conforme necessário)
+        const API_BASE_URL = window.location.origin + '/api';
+
+        // Função para fazer requisições HTTP
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const url = `${API_BASE_URL}${endpoint}`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erro na requisição');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Erro na API:', error);
+                throw error;
+            }
+        }
+
+        async function submitInitialRegistration() {
+            const cnpj = document.getElementById('regCNPJ').value.trim();
+            const regime = document.getElementById('regRegime').value;
+            const faturamento = document.getElementById('regFaturamento').value;
+            const nome = document.getElementById('regNome').value.trim();
+            const telefone = document.getElementById('regTelefone').value.trim();
+            const cargo = document.getElementById('regCargo').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            let instagram = document.getElementById('regInstagram').value.trim();
+
+            // Capturar dores selecionadas
+            const doresSelecionadas = [];
+            for (let i = 1; i <= 8; i++) {
+                const checkbox = document.getElementById(`dor${i}`);
+                if (checkbox.checked) {
+                    doresSelecionadas.push(checkbox.value);
+                }
+            }
+
+            // Validação básica
+            if (!cnpj || !regime || !faturamento || !nome || !telefone || !cargo || !email || !instagram) {
+                alert('⚠️ Por favor, preencha todos os campos obrigatórios!');
+                return;
+            }
+
+            if (doresSelecionadas.length === 0) {
+                alert('⚠️ Por favor, selecione pelo menos uma opção em "Qual a sua maior dor hoje?"');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('⚠️ Por favor, digite um e-mail válido!');
+                return;
+            }
+
+            if (!instagram.startsWith('@')) {
+                instagram = '@' + instagram;
+            }
+
+            // Mostrar loading
+            document.getElementById('loadingRegistration').style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+
+            try {
+                // Preparar dados para enviar ao backend
+                const playerData = {
+                    cnpj: cnpj,
+                    regime: regime,
+                    faturamento: faturamento,
+                    dor: doresSelecionadas.join(', '),
+                    nome: nome,
+                    telefone: telefone,
+                    cargo: cargo,
+                    email: email,
+                    instagram: instagram
+                };
+
+                // Salvar no backend
+                const response = await apiRequest('/players', {
+                    method: 'POST',
+                    body: JSON.stringify(playerData)
+                });
+
+                if (response.success) {
+                    // Salvar dados do jogador localmente para usar no jogo
+                    currentPlayer = {
+                        id: response.playerId,
+                        ...playerData,
+                        timestamp: new Date().toLocaleString('pt-BR')
+                    };
+
+                    // Esconder tela de cadastro e mostrar tela do jogo
+                    document.getElementById('registrationScreen').style.display = 'none';
+                    document.getElementById('gameScreen').style.display = 'flex';
+
+                    // Inicializar o jogo
+                    gameStarted = true;
+                    startGame();
+
+                    // Mostrar notificação de boas-vindas
+                    showWelcomeNotification(nome);
+                } else {
+                    throw new Error('Erro ao salvar jogador');
+                }
+
+            } catch (error) {
+                console.error('Erro ao salvar jogador:', error);
+                alert('❌ Erro ao salvar seus dados. Por favor, tente novamente.\n\n' + error.message);
+            } finally {
+                // Esconder loading
+                document.getElementById('loadingRegistration').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+            }
+        }
+
+        async function updatePlayerScore(playerId, scoreData) {
+            try {
+                await apiRequest(`/players/${playerId}/score`, {
+                    method: 'PUT',
+                    body: JSON.stringify(scoreData)
+                });
+            } catch (error) {
+                console.error('Erro ao atualizar pontuação:', error);
+            }
+        }
+
+        async function loadRanking() {
+            try {
+                const response = await apiRequest('/ranking');
+                if (response.success) {
+                    playerRanking = response.ranking;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar ranking:', error);
+            }
+        }
+
+        function showWelcomeNotification(nome) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #22c55e;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                font-weight: bold;
+                z-index: 1002;
+                box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+                max-width: 300px;
+            `;
+            notification.innerHTML = `
+                🎉 Bem-vindo(a), ${nome.split(' ')[0]}!<br>
+                <small>Boa sorte no jogo da memória!</small>
+            `;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 4000);
+        }
+
+        function initGame() {
+            gameBoard = [...cards, ...cards];
+            
+            for (let i = gameBoard.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gameBoard[i], gameBoard[j]] = [gameBoard[j], gameBoard[i]];
+            }
+            
+            renderBoard();
+            resetStats();
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            
+            gameBoard.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.index = index;
+                cardElement.onclick = () => flipCard(index);
+                
+                cardElement.innerHTML = `
+                    <div class="card-front">
+                        <div class="card-icon">${card.icon}</div>
+                        <div class="card-title">${card.title}</div>
+                    </div>
+                    <div class="card-back">
+                        <svg width="60" height="60" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="48" fill="#1e40af" stroke="white" stroke-width="3"/>
+                            <text x="50" y="42" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Fiscofy</text>
+                            <text x="50" y="58" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8">Inteligência Fiscal</text>
+                            <polygon points="75,50 68,45 68,55" fill="white"/>
+                        </svg>
+                    </div>
+                `;
+                
+                board.appendChild(cardElement);
+            });
+        }
+
+        function flipCard(index) {
+            if (flippedCards.length === 2) return;
+            if (flippedCards.includes(index)) return;
+            
+            const cardElement = document.querySelector(`[data-index="${index}"]`);
+            cardElement.classList.add('flipped');
+            flippedCards.push(index);
+            
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('moves').textContent = moves;
+                setTimeout(checkMatch, 1000);
+            }
+        }
+
+        function checkMatch() {
+            const [index1, index2] = flippedCards;
+            const card1 = gameBoard[index1];
+            const card2 = gameBoard[index2];
+            
+            if (card1.id === card2.id) {
+                const cardElements = [
+                    document.querySelector(`[data-index="${index1}"]`),
+                    document.querySelector(`[data-index="${index2}"]`)
+                ];
+                
+                cardElements.forEach(el => {
+                    el.classList.add('matched');
+                    el.classList.add('flipped');
+                    el.onclick = null;
+                });
+                
+                matchedPairs++;
+                score += 100;
+                
+                const timeBonus = Math.max(50 - Math.floor(getElapsedTime() / 1000), 0);
+                score += timeBonus;
+                
+                document.getElementById('score').textContent = score;
+                showCardInfo(card1);
+                
+                if (matchedPairs === cards.length) {
+                    setTimeout(() => gameWon(), 500);
+                }
+            } else {
+                setTimeout(() => {
+                    document.querySelector(`[data-index="${index1}"]`).classList.remove('flipped');
+                    document.querySelector(`[data-index="${index2}"]`).classList.remove('flipped');
+                }, 500);
+            }
+            
+            flippedCards = [];
+        }
+
+        function showCardInfo(card) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #22c55e;
+                color: white;
+                padding: 15px;
+                border-radius: 10px;
+                max-width: 300px;
+                z-index: 1001;
+                box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+            `;
+            toast.innerHTML = `
+                <strong>${card.icon} ${card.title}</strong><br>
+                <small>${card.info}</small>
+            `;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 8000);
+        }
+
+        function startGame() {
+            initGame();
+            startTime = new Date();
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function resetStats() {
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            score = 0;
+            document.getElementById('moves').textContent = moves;
+            document.getElementById('score').textContent = score;
+            document.getElementById('timer').textContent = '00:00';
+        }
+
+        function updateTimer() {
+            const elapsed = getElapsedTime();
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function getElapsedTime() {
+            return new Date() - startTime;
+        }
+
+        async function gameWon() {
+            clearInterval(timerInterval);
+            const timeBonus = Math.max(300 - Math.floor(getElapsedTime() / 1000), 0);
+            const moveBonus = Math.max(200 - (moves * 10), 0);
+            const finalScore = score + timeBonus + moveBonus;
+            
+            const timeInSeconds = Math.floor(getElapsedTime() / 1000);
+            const rankingScore = Math.max(10000 - (timeInSeconds * 10) - (moves * 50), 1000);
+            
+            // Atualizar pontuação no backend
+            if (currentPlayer && currentPlayer.id) {
+                const scoreData = {
+                    score: rankingScore,
+                    moves: moves,
+                    time: timeInSeconds,
+                    finalScore: finalScore
+                };
+
+                try {
+                    await updatePlayerScore(currentPlayer.id, scoreData);
+                    // Recarregar ranking
+                    await loadRanking();
+                } catch (error) {
+                    console.error('Erro ao salvar pontuação:', error);
+                }
+            }
+            
+            // Mostrar modal de vitória
+            document.getElementById('modalTitle').textContent = '🎉 Parabéns!';
+            document.getElementById('modalText').innerHTML = `
+                <div style="text-align: center; line-height: 1.8; font-size: 1.1em;">
+                    <strong style="font-size: 1.3em;">Você concluiu o jogo com sucesso!</strong><br><br>
+                    
+                    🏆 <strong>Pontuação Final:</strong> ${finalScore} pontos<br>
+                    🎯 <strong>Jogadas:</strong> ${moves}<br>
+                    ⏱️ <strong>Tempo:</strong> ${document.getElementById('timer').textContent}<br><br>
+                    
+                    💡 <strong>Agora que você mostrou que domina a memória tributária, que tal dar o próximo passo?</strong><br><br>
+                    
+                    🚀 <strong>Visite o stand da Fiscofy</strong> e descubra como transformar tributos em oportunidades para o seu negócio!<br><br>
+                    
+                    🎁 <strong>E o melhor: você agora está concorrendo a um par de AirPods!</strong><br><br>
+                    
+                    <div style="margin-top: 25px;">
+                        <button class="btn" onclick="closeModal(); showRanking();" style="margin-right: 15px;">🏆 Ver Ranking</button>
+                        <button class="btn" onclick="closeModal(); resetToRegistration();" style="background: #059669;">🎮 Jogar Novamente</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function resetToRegistration() {
+            gameStarted = false;
+            currentPlayer = null;
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            score = 0;
+            clearInterval(timerInterval);
+            
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('registrationScreen').style.display = 'flex';
+            document.getElementById('initialRegistrationForm').reset();
+        }
+
+        async function showRanking() {
+            // Carregar ranking atualizado do backend
+            await loadRanking();
+
+            let rankingHTML = '';
+            
+            if (playerRanking.length === 0) {
+                rankingHTML = '<p style="text-align: center; font-style: italic; color: #64748b;">Nenhum jogo completado ainda.<br>Seja o primeiro no ranking!</p>';
+            } else {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const adminInstruction = isMobile ? "Toque 5x no título para desativar" : "Ctrl+Shift+F para desativar";
+                
+                rankingHTML = `
+                    <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: #f0f9ff; border-radius: 10px;">
+                        <strong style="color: #1e40af;">📊 Total de Participantes: ${playerRanking.length}</strong><br>
+                        <small style="color: #64748b;">
+                            🏆 Melhor pontuação: ${playerRanking[0].score} pts por ${playerRanking[0].nome}
+                        </small>
+                        ${adminMode ? `<br><small style="color: #dc2626; font-weight: bold;">🔑 Modo Admin Ativo - ${adminInstruction}</small>` : ''}
+                    </div>
+                `;
+                
+                rankingHTML += '<div style="max-height: 600px; overflow-y: auto; padding-right: 10px;">';
+                playerRanking.forEach((player, index) => {
+                    const position = index + 1;
+                    const timeFormatted = formatTime(player.time);
+                    let medal = '';
+                    let borderColor = '#1e40af';
+                    
+                    if (position === 1) {
+                        medal = '🥇';
+                        borderColor = '#ffd700';
+                    } else if (position === 2) {
+                        medal = '🥈';
+                        borderColor = '#c0c0c0';
+                    } else if (position === 3) {
+                        medal = '🥉';
+                        borderColor = '#cd7f32';
+                    } else {
+                        medal = `${position}º`;
+                    }
+                    
+                    const isTop3 = position <= 3;
+                    
+                    rankingHTML += `
+                        <div style="background: ${isTop3 ? '#f0f9ff' : '#f8fafc'}; 
+                                    padding: 12px; margin: 8px 0; border-radius: 8px; 
+                                    border-left: 4px solid ${borderColor};
+                                    ${isTop3 ? 'box-shadow: 0 2px 8px rgba(30, 64, 175, 0.1);' : ''}
+                                    transition: transform 0.2s ease;"
+                             onmouseover="this.style.transform='translateX(5px)'"
+                             onmouseout="this.style.transform='translateX(0)'">
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: #1e40af;">${medal} ${player.nome}</strong>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em;">📋 Completo</span>
+                                    <span style="color: #059669; font-weight: bold;">${player.score} pts</span>
+                                </div>
+                            </div>
+                            
+                            <div style="font-size: 0.9em; color: #64748b; margin-bottom: 6px;">
+                                🎯 ${player.moves} jogadas | ⏱️ ${timeFormatted} | 📅 ${player.date}
+                            </div>
+                            
+                            <div style="font-size: 0.8em; color: #374151; background: #f9fafb; padding: 8px; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                    <div><strong>📧 Email:</strong> ${player.email}</div>
+                                    <div><strong>📱 Telefone:</strong> ${player.telefone}</div>
+                                    <div><strong>🏢 Cargo:</strong> ${player.cargo}</div>
+                                    <div><strong>📱 Instagram:</strong> ${player.instagram}</div>
+                                    <div><strong>💰 Faturamento:</strong> ${player.faturamento}</div>
+                                    <div><strong>⚖️ Regime:</strong> ${player.regime}</div>
+                                </div>
+                                <div style="margin-top: 8px;">
+                                    <strong>🔥 Maior Dor:</strong> ${player.dor}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                rankingHTML += '</div>';
+            }
+            
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const adminInfo = adminMode ? (isMobile ? 'Toque 5x no título para desativar' : 'Ctrl+Shift+F para desativar') : '';
+            
+            document.getElementById('modalTitle').textContent = '🏆 Ranking Geral - Fiscofy';
+            document.getElementById('modalText').innerHTML = rankingHTML + 
+                `<br><div style="text-align: center; font-size: 0.9em; color: #64748b;">
+                    <p>Todos os jogadores aparecem aqui! Cadastre-se e jogue para entrar no ranking!</p>
+                    ${adminMode ? `<p style="color: #dc2626;">🔑 Modo Admin: ${adminInfo}</p>` : ''}
+                </div>`;
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function handleTitleTap() {
+            titleTapCount++;
+            
+            const title = document.getElementById('gameTitle');
+            title.style.transform = 'scale(0.98)';
+            setTimeout(() => title.style.transform = 'scale(1)', 100);
+            
+            clearTimeout(titleTapTimer);
+            titleTapTimer = setTimeout(() => {
+                titleTapCount = 0;
+            }, 3000);
+            
+            if (titleTapCount >= 5) {
+                titleTapCount = 0;
+                clearTimeout(titleTapTimer);
+                toggleAdminMode();
+            }
+        }
+
+        function toggleAdminMode() {
+            adminMode = !adminMode;
+            const resetBtn = document.getElementById('resetBtn');
+            const title = document.getElementById('gameTitle');
+            
+            if (adminMode) {
+                resetBtn.style.display = 'inline-block';
+                title.style.background = 'linear-gradient(45deg, #dc2626, #ef4444)';
+                title.style.webkitBackgroundClip = 'text';
+                title.style.webkitTextFillColor = 'transparent';
+                title.style.backgroundClip = 'text';
+                title.title = 'Modo Administrador Ativo - Toque 5x para desativar';
+                
+                showAdminNotification("🔑 Modo Administrador ATIVADO");
+            } else {
+                resetBtn.style.display = 'none';
+                title.style.background = 'none';
+                title.style.webkitTextFillColor = '#0d2d52';
+                title.style.color = '#0d2d52';
+                title.title = 'Toque 5 vezes rapidamente para ativar modo admin';
+                
+                showAdminNotification("🔒 Modo Administrador DESATIVADO");
+            }
+        }
+
+        function resetRanking() {
+            if (!adminMode) return;
+            
+            const confirmReset = confirm(
+                "⚠️ ATENÇÃO!\n\n" +
+                "Esta funcionalidade não está implementada no backend ainda.\n\n" +
+                "Para limpar o ranking, você precisa deletar o banco de dados diretamente."
+            );
+        }
+
+        function showAdminNotification(message) {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const instruction = adminMode ? 
+                (isMobile ? "Toque 5x no título para desativar" : "Ctrl+Shift+F para desativar") :
+                (isMobile ? "Toque 5x no título para ativar" : "Ctrl+Shift+F para ativar");
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                background: #dc2626;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                font-weight: bold;
+                z-index: 1002;
+                box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+                border: 2px solid #fca5a5;
+                max-width: 280px;
+            `;
+            notification.innerHTML = `
+                ${message}<br>
+                <small style="opacity: 0.8;">${instruction}</small>
+            `;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 4000);
+        }
+
+        function showInstructions() {
+            document.getElementById('modalTitle').textContent = 'Como Jogar';
+            document.getElementById('modalText').innerHTML = `
+                🎯 <strong>Objetivo:</strong> Encontre todos os pares de cartas relacionadas aos temas tributários!<br><br>
+                🔄 <strong>Regras:</strong><br>
+                • Clique em duas cartas para virá-las<br>
+                • Se fizerem par, elas permanecerão viradas<br>
+                • Se não fizerem par, virarão novamente<br>
+                • Complete todos os pares no menor número de jogadas!<br><br>
+                🏆 <strong>Pontuação:</strong><br>
+                • Par correto: +100 pontos<br>
+                • Bônus de tempo: pontos extras por rapidez<br>
+                • Bônus de eficiência: menos jogadas = mais pontos!<br><br>
+                🏅 <strong>Ranking Geral:</strong><br>
+                • Todos os jogadores aparecem no ranking<br>
+                • Sua pontuação é calculada por: velocidade + eficiência<br>
+                • Quanto mais rápido e com menos jogadas, melhor!<br>
+                • Top 3 ganham destaque especial com medalhas!<br><br>
+                💡 <strong>Dica:</strong> Cada par que você encontrar vai mostrar uma dica tributária valiosa!
+            `;
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+                e.preventDefault();
+                toggleAdminMode();
+            }
+        });
+
+        window.onload = () => {
+            const title = document.getElementById('gameTitle');
+            title.title = 'Toque 5 vezes rapidamente para ativar modo admin';
+            
+            // Adicionar máscara para CNPJ
+            const cnpjInput = document.getElementById('regCNPJ');
+            cnpjInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                e.target.value = value;
+            });
+            
+            // Adicionar máscara para telefone
+            const phoneInput = document.getElementById('regTelefone');
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+                value = value.replace(/(\d{5})(\d)/, '$1-$2');
+                e.target.value = value;
+            });
+
+            // Carregar ranking inicial
+            loadRanking();
+        };
+    </script>
+</body>
+</html>
