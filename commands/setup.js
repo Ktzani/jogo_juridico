@@ -6,7 +6,7 @@ const path = require('path');
 console.log('🎮 Configurando Jogo da Memória Tributária - Fiscofy\n');
 
 // Criar diretório public se não existir
-const publicDir = path.join(__dirname, 'public');
+const publicDir = path.join('src', 'public');
 if (!fs.existsSync(publicDir)) {
     fs.mkdirSync(publicDir);
     console.log('✅ Diretório public/ criado');

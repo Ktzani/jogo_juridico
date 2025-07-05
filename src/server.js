@@ -37,6 +37,15 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'jogo.html'));
 });
 
+// Rota para painel admin
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get('/admin.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.status(200).json({ 
@@ -210,6 +219,126 @@ app.get('/api/pain-points/top/:limit?', async (req, res) => {
         console.error('Erro ao buscar top pain points:', error);
         res.status(500).json({ 
             error: 'Erro interno do servidor ao buscar top pain points' 
+        });
+    }
+});
+
+// ADMIN ENDPOINTS - Para gerenciar dados
+
+// Limpar todos os dados (CUIDADO!)
+app.delete('/api/admin/clear-all', async (req, res) => {
+    try {
+        const { confirmToken } = req.body;
+        
+        // Token de segurança simples
+        if (confirmToken !== 'FISCOFY_CLEAR_2025') {
+            return res.status(401).json({ 
+                error: 'Token de confirmação inválido' 
+            });
+        }
+
+        const db = require('./database').getDatabase();
+        
+        // Limpar tabelas na ordem correta (por causa das foreign keys)
+        await new Promise((resolve, reject) => {
+            db.run('DELETE FROM player_pain_points', (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+        await new Promise((resolve, reject) => {
+            db.run('DELETE FROM players', (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+        console.log('🗑️ Todos os dados foram removidos via API admin');
+        
+        res.json({ 
+            success: true, 
+            message: 'Todos os dados foram removidos com sucesso!' 
+        });
+    } catch (error) {
+        console.error('Erro ao limpar dados:', error);
+        res.status(500).json({ 
+            error: 'Erro interno do servidor ao limpar dados' 
+        });
+    }
+});
+
+// Remover jogador específico
+app.delete('/api/admin/player/:id', async (req, res) => {
+    try {
+        const playerId = req.params.id;
+        const db = require('./database').getDatabase();
+        
+        // Remover relacionamentos primeiro
+        await new Promise((resolve, reject) => {
+            db.run('DELETE FROM player_pain_points WHERE player_id = ?', [playerId], (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+        // Remover jogador
+        await new Promise((resolve, reject) => {
+            db.run('DELETE FROM players WHERE id = ?', [playerId], function(err) {
+                if (err) reject(err);
+                else resolve(this.changes);
+            });
+        });
+
+        console.log(`🗑️ Jogador ${playerId} removido via API admin`);
+        
+        res.json({ 
+            success: true, 
+            message: `Jogador removido com sucesso!` 
+        });
+    } catch (error) {
+        console.error('Erro ao remover jogador:', error);
+        res.status(500).json({ 
+            error: 'Erro interno do servidor ao remover jogador' 
+        });
+    }
+});
+
+// Resetar pontuações (manter jogadores, limpar apenas scores)
+app.patch('/api/admin/reset-scores', async (req, res) => {
+    try {
+        const { confirmToken } = req.body;
+        
+        if (confirmToken !== 'FISCOFY_RESET_2025') {
+            return res.status(401).json({ 
+                error: 'Token de confirmação inválido' 
+            });
+        }
+
+        const db = require('./database').getDatabase();
+        
+        await new Promise((resolve, reject) => {
+            db.run(
+                `UPDATE players SET 
+                 score = 0, moves = 0, time = 0, final_score = 0, 
+                 completed_at = NULL`,
+                (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                }
+            );
+        });
+
+        console.log('🔄 Pontuações resetadas via API admin');
+        
+        res.json({ 
+            success: true, 
+            message: 'Pontuações resetadas com sucesso!' 
+        });
+    } catch (error) {
+        console.error('Erro ao resetar pontuações:', error);
+        res.status(500).json({ 
+            error: 'Erro interno do servidor ao resetar pontuações' 
         });
     }
 });
