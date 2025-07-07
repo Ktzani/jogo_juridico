@@ -283,6 +283,18 @@
             <button class="btn btn-warning" onclick="showStats()">📈 Estatísticas</button>
             <button class="btn" onclick="window.open('/', '_blank')">🎮 Abrir Jogo</button>
             <button class="btn" style="background: #dc2626;" onclick="showClearOptions()">🗑️ Gerenciar Dados</button>
+            <button class="btn" style="background: #059669;" onclick="testAPIs()">🧪 Testar APIs</button>
+        </div>
+
+        <!-- Modal para teste de APIs -->
+        <div id="testModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h3>🧪 Teste de APIs</h3>
+                <div id="testResults" style="text-align: left; max-height: 400px; overflow-y: auto; margin: 20px 0;">
+                    <!-- Resultados dos testes aparecerão aqui -->
+                </div>
+                <button class="btn" onclick="closeTestModal()">✅ Fechar</button>
+            </div>
         </div>
 
         <!-- Modal para opções de limpeza -->
@@ -330,8 +342,23 @@
     <script>
         const API_BASE = window.location.origin + '/api';
 
+        // Função formatTime DEVE vir primeiro (antes de ser usada)
+        function formatTime(seconds) {
+            if (!seconds || seconds === 0) return '00:00';
+            
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        // Log debug function
+        function debugLog(message, data = null) {
+            console.log(`[ADMIN] ${message}`, data);
+        }
+
         // Carregar todos os dados
         async function loadAllData() {
+            console.log('🔄 Iniciando carregamento de dados...');
             await Promise.all([
                 loadStats(),
                 loadPlayers(),
@@ -342,19 +369,36 @@
         // Carregar estatísticas
         async function loadStats() {
             try {
+                console.log('📊 Carregando estatísticas...');
                 const response = await fetch(`${API_BASE}/stats`);
+                console.log('Stats response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Stats data:', data);
                 
                 if (data.success) {
                     displayStats(data.stats);
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido');
                 }
             } catch (error) {
-                console.error('Erro ao carregar estatísticas:', error);
+                console.error('❌ Erro ao carregar estatísticas:', error);
+                displayStats({
+                    total_players: 0,
+                    completed_games: 0,
+                    highest_score: 0,
+                    average_score: 0
+                });
             }
         }
 
         // Exibir estatísticas
         function displayStats(stats) {
+            console.log('📈 Exibindo estatísticas:', stats);
             const statsGrid = document.getElementById('statsGrid');
             statsGrid.innerHTML = `
                 <div class="stat-card">
@@ -378,49 +422,77 @@
 
         // Carregar jogadores
         async function loadPlayers() {
+            const container = document.getElementById('playersContent');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando jogadores...</p></div>';
+            
             try {
+                console.log('👥 Carregando jogadores...');
                 const response = await fetch(`${API_BASE}/players`);
+                console.log('Players response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Players data:', data);
                 
                 if (data.success) {
                     displayPlayers(data.players);
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido');
                 }
             } catch (error) {
-                console.error('Erro ao carregar jogadores:', error);
-                document.getElementById('playersContent').innerHTML = 
-                    '<p style="color: red; text-align: center;">Erro ao carregar dados dos jogadores</p>';
+                console.error('❌ Erro ao carregar jogadores:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; color: red; padding: 20px;">
+                        <p><strong>❌ Erro ao carregar jogadores</strong></p>
+                        <p>Detalhes: ${error.message}</p>
+                        <button class="btn" onclick="loadPlayers()" style="margin-top: 10px;">🔄 Tentar Novamente</button>
+                    </div>
+                `;
             }
         }
 
         // Exibir jogadores
         function displayPlayers(players) {
+            console.log('👥 Exibindo jogadores:', players?.length || 0);
             const container = document.getElementById('playersContent');
             
             if (!players || players.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b;">Nenhum jogador cadastrado ainda.</p>';
+                container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 40px;">Nenhum jogador cadastrado ainda.</p>';
                 return;
             }
+
+            // Armazenar dados globalmente para exportação
+            window.playersData = players;
 
             const playersHTML = players.map((player, index) => {
                 const position = index + 1;
                 const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : `${position}º`;
-                const gameStatus = player.score > 0 ? '✅ Completou' : '⏳ Cadastrado';
-                const date = new Date(player.timestamp).toLocaleDateString('pt-BR');
+                const gameStatus = (player.score && player.score > 0) ? '✅ Completou' : '⏳ Cadastrado';
+                const date = player.timestamp ? new Date(player.timestamp).toLocaleDateString('pt-BR') : 'N/A';
                 
                 return `
-                    <div class="player-card">
+                    <div class="player-card" data-player-id="${player.id}">
                         <div class="player-header">
-                            <div class="player-name">${medal} ${player.nome}</div>
-                            <div class="player-score">${player.score || 0} pts</div>
+                            <div class="player-name">${medal} ${player.nome || 'Nome não informado'}</div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="player-score">${player.score || 0} pts</div>
+                                <button class="btn remove-btn" onclick="removePlayer(${player.id}, '${player.nome}')" 
+                                        style="background: #dc2626; font-size: 0.8em; padding: 5px 10px;">
+                                    🗑️ Remover
+                                </button>
+                            </div>
                         </div>
                         <div class="player-details">
-                            <div><strong>📧 Email:</strong> ${player.email}</div>
-                            <div><strong>📱 Telefone:</strong> ${player.telefone}</div>
-                            <div><strong>🏢 Cargo:</strong> ${player.cargo}</div>
-                            <div><strong>📱 Instagram:</strong> ${player.instagram}</div>
-                            <div><strong>🏭 CNPJ:</strong> ${player.cnpj}</div>
-                            <div><strong>⚖️ Regime:</strong> ${player.regime}</div>
-                            <div><strong>💰 Faturamento:</strong> ${player.faturamento}</div>
+                            <div><strong>📧 Email:</strong> ${player.email || 'N/A'}</div>
+                            <div><strong>📱 Telefone:</strong> ${player.telefone || 'N/A'}</div>
+                            <div><strong>🏢 Cargo:</strong> ${player.cargo || 'N/A'}</div>
+                            <div><strong>📱 Instagram:</strong> ${player.instagram || 'N/A'}</div>
+                            <div><strong>🏭 CNPJ:</strong> ${player.cnpj || 'N/A'}</div>
+                            <div><strong>⚖️ Regime:</strong> ${player.regime || 'N/A'}</div>
+                            <div><strong>💰 Faturamento:</strong> ${player.faturamento || 'N/A'}</div>
                             <div><strong>🎮 Status:</strong> ${gameStatus}</div>
                             <div><strong>📅 Data:</strong> ${date}</div>
                             <div><strong>🎯 Jogadas:</strong> ${player.moves || 0}</div>
@@ -432,107 +504,274 @@
             }).join('');
 
             container.innerHTML = playersHTML;
+            console.log('✅ Jogadores exibidos com sucesso');
         }
 
         // Carregar análise de dores
         async function loadPainAnalysis() {
+            const container = document.getElementById('painAnalysisContent');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando análise de dores...</p></div>';
+            
             try {
+                console.log('🔥 Carregando análise de dores...');
                 const response = await fetch(`${API_BASE}/pain-points/analysis`);
+                console.log('Pain analysis response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Pain analysis data:', data);
                 
                 if (data.success) {
                     displayPainAnalysis(data.analysis);
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido');
                 }
             } catch (error) {
-                console.error('Erro ao carregar análise de dores:', error);
-                document.getElementById('painAnalysisContent').innerHTML = 
-                    '<p style="color: red; text-align: center;">Erro ao carregar análise</p>';
+                console.error('❌ Erro ao carregar análise de dores:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; color: red; padding: 20px;">
+                        <p><strong>❌ Erro ao carregar análise</strong></p>
+                        <p>Detalhes: ${error.message}</p>
+                        <button class="btn" onclick="loadPainAnalysis()" style="margin-top: 10px;">🔄 Tentar Novamente</button>
+                    </div>
+                `;
             }
         }
 
         // Exibir análise de dores
         function displayPainAnalysis(analysis) {
+            console.log('🔥 Exibindo análise de dores:', analysis?.length || 0);
             const container = document.getElementById('painAnalysisContent');
             
             if (!analysis || analysis.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b;">Nenhum dado de análise disponível.</p>';
+                container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 40px;">Nenhum dado de análise disponível.</p>';
                 return;
             }
 
             const analysisHTML = analysis.map(pain => `
                 <div class="pain-item">
-                    <div class="pain-name">${pain.name}</div>
+                    <div class="pain-name">${pain.name || 'Não informado'}</div>
                     <div class="pain-stats">
-                        ${pain.count} jogadores (${pain.percentage}%)
+                        ${pain.count || 0} jogadores (${pain.percentage || 0}%)
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${pain.percentage}%"></div>
+                        <div class="progress-fill" style="width: ${Math.min(pain.percentage || 0, 100)}%"></div>
                     </div>
                 </div>
             `).join('');
 
             container.innerHTML = `<div class="pain-analysis">${analysisHTML}</div>`;
+            console.log('✅ Análise de dores exibida com sucesso');
+        }
+
+        // Remover jogador específico (versão corrigida)
+        async function removePlayer(playerId, playerName) {
+            if (!playerId) {
+                alert('❌ ID do jogador não encontrado');
+                return;
+            }
+
+            if (!confirm(`⚠️ Remover jogador: ${playerName}?\n\nEsta ação não pode ser desfeita!`)) {
+                return;
+            }
+
+            try {
+                console.log(`🗑️ Removendo jogador ID: ${playerId}`);
+                
+                const response = await fetch(`${API_BASE}/admin/player/${playerId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Remove response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('Remove result:', result);
+                
+                if (result.success) {
+                    alert('✅ Jogador removido com sucesso!');
+                    
+                    // Remover o cartão da interface imediatamente
+                    const playerCard = document.querySelector(`[data-player-id="${playerId}"]`);
+                    if (playerCard) {
+                        playerCard.remove();
+                    }
+                    
+                    // Recarregar dados para atualizar estatísticas
+                    setTimeout(() => loadAllData(), 500);
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao remover jogador:', error);
+                alert(`❌ Erro ao remover jogador: ${error.message}`);
+            }
         }
 
         // Exportar dados para CSV
         async function exportData() {
             try {
-                const response = await fetch(`${API_BASE}/players`);
-                const data = await response.json();
+                console.log('📊 Iniciando exportação...');
                 
-                if (data.success && data.players.length > 0) {
-                    const csv = convertToCSV(data.players);
-                    downloadCSV(csv, `jogadores_fiscofy_${new Date().toISOString().split('T')[0]}.csv`);
-                } else {
-                    alert('Nenhum dado para exportar');
+                // Usar dados já carregados se disponíveis
+                let players = window.playersData;
+                
+                // Se não tiver dados carregados, buscar
+                if (!players) {
+                    console.log('📡 Buscando dados para exportação...');
+                    const response = await fetch(`${API_BASE}/players`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Erro na API: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (!data.success) {
+                        throw new Error(data.error || 'Erro desconhecido na API');
+                    }
+                    
+                    players = data.players;
                 }
+                
+                if (!players || players.length === 0) {
+                    alert('❌ Nenhum dado disponível para exportação');
+                    return;
+                }
+                
+                console.log(`📋 Exportando ${players.length} jogadores...`);
+                
+                const csv = convertToCSV(players);
+                const fileName = `jogadores_fiscofy_${new Date().toISOString().split('T')[0]}.csv`;
+                downloadCSV(csv, fileName);
+                
+                console.log('✅ Exportação concluída');
+                
             } catch (error) {
-                console.error('Erro ao exportar:', error);
-                alert('Erro ao exportar dados');
+                console.error('❌ Erro ao exportar:', error);
+                alert(`❌ Erro ao exportar dados: ${error.message}\n\nVerifique o console para mais detalhes.`);
             }
         }
 
-        // Converter para CSV
+        // Converter para CSV (versão melhorada)
         function convertToCSV(players) {
-            const headers = ['Posição', 'Nome', 'Email', 'Telefone', 'Cargo', 'Instagram', 'CNPJ', 'Regime', 'Faturamento', 'Dores', 'Pontuação', 'Jogadas', 'Tempo', 'Data'];
+            console.log('🔄 Convertendo para CSV...');
             
-            const rows = players.map((player, index) => [
-                index + 1,
-                player.nome,
-                player.email,
-                player.telefone,
-                player.cargo,
-                player.instagram,
-                player.cnpj,
-                player.regime,
-                player.faturamento,
-                player.dor || '',
-                player.score || 0,
-                player.moves || 0,
-                formatTime(player.time || 0),
-                new Date(player.timestamp).toLocaleDateString('pt-BR')
-            ]);
-
-            return [headers, ...rows].map(row => 
-                row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+            // Headers do CSV
+            const headers = [
+                'Posição',
+                'Nome',
+                'Email', 
+                'Telefone',
+                'Cargo',
+                'Instagram',
+                'CNPJ',
+                'Regime Tributário',
+                'Faturamento',
+                'Principais Dores',
+                'Pontuação',
+                'Jogadas',
+                'Tempo (mm:ss)',
+                'Data Cadastro',
+                'Status',
+                'Timestamp Completo'
+            ];
+            
+            // Dados dos jogadores
+            const rows = players.map((player, index) => {
+                const position = index + 1;
+                const status = (player.score && player.score > 0) ? 'COMPLETOU' : 'CADASTRADO';
+                const date = player.timestamp ? new Date(player.timestamp).toLocaleDateString('pt-BR') : 'N/A';
+                const timestamp = player.timestamp ? new Date(player.timestamp).toLocaleString('pt-BR') : 'N/A';
+                
+                return [
+                    position,
+                    player.nome || '',
+                    player.email || '',
+                    player.telefone || '',
+                    player.cargo || '',
+                    player.instagram || '',
+                    player.cnpj || '',
+                    player.regime || '',
+                    player.faturamento || '',
+                    player.dor || '',
+                    player.score || 0,
+                    player.moves || 0,
+                    formatTime(player.time || 0),
+                    date,
+                    status,
+                    timestamp
+                ];
+            });
+            
+            // Combinar headers e dados
+            const allRows = [headers, ...rows];
+            
+            // Converter para formato CSV (escapar aspas e vírgulas)
+            const csvContent = allRows.map(row => 
+                row.map(field => {
+                    const fieldStr = String(field || '');
+                    // Se contém vírgula, quebra de linha ou aspas, envolver em aspas
+                    if (fieldStr.includes(',') || fieldStr.includes('\n') || fieldStr.includes('"')) {
+                        return `"${fieldStr.replace(/"/g, '""')}"`;
+                    }
+                    return fieldStr;
+                }).join(',')
             ).join('\n');
+            
+            console.log('✅ CSV gerado com sucesso');
+            return csvContent;
         }
 
-        // Download CSV
+        // Download CSV (versão melhorada)
         function downloadCSV(csv, filename) {
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            
-            if (link.download !== undefined) {
+            try {
+                console.log(`💾 Fazendo download: ${filename}`);
+                
+                // Adicionar BOM para UTF-8 (para Excel abrir corretamente)
+                const BOM = '\uFEFF';
+                const csvWithBOM = BOM + csv;
+                
+                const blob = new Blob([csvWithBOM], { 
+                    type: 'text/csv;charset=utf-8;' 
+                });
+                
+                // Verificar se o navegador suporta download
+                const link = document.createElement('a');
+                if (typeof link.download === 'undefined') {
+                    alert('❌ Seu navegador não suporta download automático. Copie os dados manualmente.');
+                    console.log('CSV Content:', csv);
+                    return;
+                }
+                
                 const url = URL.createObjectURL(blob);
                 link.setAttribute('href', url);
                 link.setAttribute('download', filename);
                 link.style.visibility = 'hidden';
+                
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 
-                setTimeout(() => URL.revokeObjectURL(url), 100);
+                // Limpar URL após um tempo
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                }, 1000);
+                
+                alert(`✅ Arquivo ${filename} baixado com sucesso!`);
+                
+            } catch (error) {
+                console.error('❌ Erro no download:', error);
+                alert(`❌ Erro ao fazer download: ${error.message}`);
             }
         }
 
