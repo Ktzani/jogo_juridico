@@ -25,23 +25,6 @@ Um jogo interativo de memória com temas tributários, desenvolvido para eventos
 npm install
 ```
 
-3. **Estrutura de pastas:**
-```
-projeto/
-├── server.js
-├── database.js
-├── package.json
-├── public/
-│   └── jogo.html
-└── fiscofy_game.db (será criado automaticamente)
-```
-
-4. **Mova o arquivo HTML:**
-```bash
-mkdir public
-# Mova o arquivo jogo.html para a pasta public/
-```
-
 ## 🚀 Executar o Projeto
 
 ### Modo Desenvolvimento
@@ -254,12 +237,9 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para detalhes.
 
 ## 💡 Próximas Funcionalidades
 
-- [ ] Dashboard administrativo
-- [ ] Exportação de dados em CSV/Excel
 - [ ] Integração com email marketing
 - [ ] Sistema de sorteio automático
 - [ ] Relatórios analíticos
-- [ ] Multiple themes/brands support
 
 ---
 
