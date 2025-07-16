@@ -173,7 +173,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Estilos do jogo (mantidos da versão original) */
+        /* Estilos do jogo */
         .game-screen {
             display: none;
             width: 100%;
@@ -197,11 +197,13 @@
             border: 1px solid rgba(13, 45, 82, 0.2);
         }
 
+        /* Grid 2x4 - 2 linhas e 4 colunas */
         .game-board {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            max-width: 600px;
+            grid-template-rows: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 800px;
             width: 100%;
             margin-bottom: 30px;
         }
@@ -219,7 +221,7 @@
             transition: transform 0.6s;
             box-shadow: 0 8px 15px rgba(0,0,0,0.1);
             position: relative;
-            min-height: 120px;
+            min-height: 150px;
             border: 2px solid #1e40af;
         }
 
@@ -256,7 +258,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 15px;
-            padding: 10px;
+            padding: 15px;
         }
 
         .card-back {
@@ -272,12 +274,12 @@
         }
 
         .card-icon {
-            font-size: 3em;
-            margin-bottom: 5px;
+            font-size: 3.5em;
+            margin-bottom: 10px;
         }
 
         .card-title {
-            font-size: 0.9em;
+            font-size: 1.1em;
             font-weight: bold;
             text-align: center;
             line-height: 1.2;
@@ -371,19 +373,20 @@
 
             .game-board {
                 grid-template-columns: repeat(4, 1fr);
-                gap: 8px;
+                gap: 10px;
+                max-width: 100%;
             }
             
             .card {
-                min-height: 80px;
+                min-height: 100px;
             }
             
             .card-icon {
-                font-size: 2em;
+                font-size: 2.5em;
             }
             
             .card-title {
-                font-size: 0.7em;
+                font-size: 0.8em;
             }
             
             .game-info {
@@ -394,6 +397,11 @@
             
             .header h1 {
                 font-size: 2em;
+            }
+
+            .controls {
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
     </style>
@@ -504,15 +512,12 @@
     </div>
 
     <script>
+        // Array com apenas as 4 cartas solicitadas
         const cards = [
-            { id: 1, icon: "🏪", title: "Marketplace", info: "Taxas do Mercado Livre podem ser deduzidas da base de cálculo de alguns tributos!" },
-            { id: 2, icon: "📊", title: "Simples Nacional", info: "Empresas acima de R$ 150k/mês podem economizar saindo do Simples Nacional!" },
+            { id: 1, icon: "📊", title: "Simples Nacional", info: "Empresas acima de R$ 150k/mês podem economizar saindo do Simples Nacional!" },
+            { id: 2, icon: "⚖️", title: "Reforma Tributária", info: "Reforma Tributária permite usar créditos de PIS/COFINS na CBS." },
             { id: 3, icon: "💰", title: "Recuperação de Créditos", info: "Recupere tributos pagos indevidamente dos últimos 5 anos!" },
-            { id: 4, icon: "🗺️", title: "ICMS Interestadual", info: "Vendas para outros estados têm regras específicas de tributação!" },
-            { id: 5, icon: "⚡", title: "Despesas Operacionais", info: "ICMS da conta de luz pode virar crédito tributário!" },
-            { id: 6, icon: "↩️", title: "Produtos Devolvidos", info: "Tributos pagos podem ser recuperados quando há devolução de mercadorias!" },
-            { id: 7, icon: "🎯", title: "Planejamento Fiscal", info: "A revisão tributária reduz custos e libera caixa para o seu negócio!" },
-            { id: 8, icon: "⚖️", title: "Reforma Tributária", info: "Reforma Tributária permite usar créditos de PIS/COFINS na CBS." }
+            { id: 4, icon: "🗺️", title: "ICMS Interestadual", info: "Vendas para outros estados têm regras específicas de tributação!" }
         ];
 
         let gameBoard = [];
@@ -679,8 +684,10 @@
         }
 
         function initGame() {
+            // Duplicar as 4 cartas para criar 8 cartas (4 pares)
             gameBoard = [...cards, ...cards];
             
+            // Embaralhar
             for (let i = gameBoard.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [gameBoard[i], gameBoard[j]] = [gameBoard[j], gameBoard[i]];
@@ -706,7 +713,7 @@
                         <div class="card-title">${card.title}</div>
                     </div>
                     <div class="card-back">
-                        <svg width="60" height="60" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="50" cy="50" r="48" fill="#1e40af" stroke="white" stroke-width="3"/>
                             <text x="50" y="42" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Fiscofy</text>
                             <text x="50" y="58" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8">Inteligência Fiscal</text>
@@ -760,7 +767,8 @@
                 document.getElementById('score').textContent = score;
                 showCardInfo(card1);
                 
-                if (matchedPairs === cards.length) {
+                // Verificar se completou o jogo (agora são apenas 4 pares)
+                if (matchedPairs === 4) {
                     setTimeout(() => gameWon(), 500);
                 }
             } else {
@@ -1075,7 +1083,7 @@
         function showInstructions() {
             document.getElementById('modalTitle').textContent = 'Como Jogar';
             document.getElementById('modalText').innerHTML = `
-                🎯 <strong>Objetivo:</strong> Encontre todos os pares de cartas relacionadas aos temas tributários!<br><br>
+                🎯 <strong>Objetivo:</strong> Encontre todos os 4 pares de cartas relacionadas aos temas tributários!<br><br>
                 🔄 <strong>Regras:</strong><br>
                 • Clique em duas cartas para virá-las<br>
                 • Se fizerem par, elas permanecerão viradas<br>
@@ -1090,6 +1098,10 @@
                 • Sua pontuação é calculada por: velocidade + eficiência<br>
                 • Quanto mais rápido e com menos jogadas, melhor!<br>
                 • Top 3 ganham destaque especial com medalhas!<br><br>
+                🎮 <strong>Layout 2x4:</strong><br>
+                • Agora são apenas 4 pares (8 cartas no total)<br>
+                • Disposição: 2 linhas e 4 colunas<br>
+                • Jogo mais rápido e dinâmico!<br><br>
                 💡 <strong>Dica:</strong> Cada par que você encontrar vai mostrar uma dica tributária valiosa!
             `;
             document.getElementById('modal').style.display = 'block';
