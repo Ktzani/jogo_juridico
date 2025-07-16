@@ -63,7 +63,7 @@
             padding: 30px;
             border-radius: 20px;
             box-shadow: 0 8px 32px rgba(13, 45, 82, 0.1);
-            max-width: 800px;
+            max-width: 600px;
             width: 100%;
             margin-top: 20px;
             border: 2px solid #1e40af;
@@ -91,8 +91,7 @@
             font-size: 14px;
         }
 
-        .form-group input,
-        .form-group select {
+        .form-group input {
             width: 100%;
             padding: 12px;
             border: 2px solid #d1d5db;
@@ -103,8 +102,7 @@
             box-sizing: border-box;
         }
 
-        .form-group input:focus,
-        .form-group select:focus {
+        .form-group input:focus {
             outline: none;
             border-color: #1e40af;
             box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
@@ -151,30 +149,6 @@
             margin: 8px 0;
             color: #1e40af;
             font-size: 0.9em;
-        }
-
-        .checkbox-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .checkbox-item input[type="checkbox"] {
-            width: auto;
-            margin: 0;
-        }
-
-        .checkbox-item label {
-            margin: 0;
-            font-weight: normal;
-            font-size: 13px;
         }
 
         /* Loading spinner */
@@ -395,10 +369,6 @@
                 margin-bottom: 15px;
             }
 
-            .checkbox-group {
-                grid-template-columns: 1fr;
-            }
-
             .game-board {
                 grid-template-columns: repeat(4, 1fr);
                 gap: 8px;
@@ -447,35 +417,6 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>Regime Tributário: *</label>
-                        <select id="regRegime" required>
-                            <option value="">Selecione</option>
-                            <option value="MEI">MEI</option>
-                            <option value="Simples Nacional">Simples Nacional</option>
-                            <option value="Lucro Presumido">Lucro Presumido</option>
-                            <option value="Lucro Real">Lucro Real</option>
-                            <option value="Não sei">Não sei</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Faturamento Médio: *</label>
-                        <select id="regFaturamento" required>
-                            <option value="">Selecione</option>
-                            <option value="Menos de 50K">Menos de 50K</option>
-                            <option value="50K - 100K">50K - 100K</option>
-                            <option value="100K - 500K">100K - 500K</option>
-                            <option value="500K - 1M">500K - 1M</option>
-                            <option value="1M - 5M">1M - 5M</option>
-                            <option value="5M - 10M">5M - 10M</option>
-                            <option value="10M - 50M">10M - 50M</option>
-                            <option value="Mais de 50M">Mais de 50M</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
                         <label>Nome Completo: *</label>
                         <input type="text" id="regNome" required maxlength="50">
                     </div>
@@ -488,58 +429,15 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>Cargo/Função: *</label>
-                        <input type="text" id="regCargo" required>
+                        <label>E-mail: *</label>
+                        <input type="email" id="regEmail" required>
                     </div>
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>E-mail: *</label>
-                        <input type="email" id="regEmail" required>
-                    </div>
-                    
-                    <div class="form-group">
+                    <div class="form-group full-width">
                         <label>Instagram: *</label>
                         <input type="text" id="regInstagram" required placeholder="@seuinstagram">
-                    </div>
-                </div>
-
-                <div class="form-group full-width">
-                    <label>Qual a sua maior dor hoje? * (Marque uma ou mais opções)</label>
-                    <div class="checkbox-group">
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="dor1" value="Dívidas com a Receita/PGFN">
-                            <label for="dor1">Dívidas com a Receita/PGFN</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="dor2" value="Execuções fiscais em andamento">
-                            <label for="dor2">Execuções fiscais em andamento</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="dor3" value="Recuperação de tributos pagos indevidamente">
-                            <label for="dor3">Recuperação de tributos pagos indevidamente</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="dor4" value="Planejamento tributário">
-                            <label for="dor4">Planejamento tributário</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="dor5" value="Registrar minha marca">
-                            <label for="dor5">Registrar minha marca</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="dor6" value="Abertura ou reestruturação societária">
-                            <label for="dor6">Abertura ou reestruturação societária</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="dor7" value="Holding Familiar">
-                            <label for="dor7">Holding Familiar</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="dor8" value="Outro">
-                            <label for="dor8">Outro</label>
-                        </div>
                     </div>
                 </div>
 
@@ -661,31 +559,14 @@
 
         async function submitInitialRegistration() {
             const cnpj = document.getElementById('regCNPJ').value.trim();
-            const regime = document.getElementById('regRegime').value;
-            const faturamento = document.getElementById('regFaturamento').value;
             const nome = document.getElementById('regNome').value.trim();
             const telefone = document.getElementById('regTelefone').value.trim();
-            const cargo = document.getElementById('regCargo').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             let instagram = document.getElementById('regInstagram').value.trim();
 
-            // Capturar dores selecionadas
-            const doresSelecionadas = [];
-            for (let i = 1; i <= 8; i++) {
-                const checkbox = document.getElementById(`dor${i}`);
-                if (checkbox.checked) {
-                    doresSelecionadas.push(checkbox.value);
-                }
-            }
-
             // Validação básica
-            if (!cnpj || !regime || !faturamento || !nome || !telefone || !cargo || !email || !instagram) {
+            if (!cnpj || !nome || !telefone || !email || !instagram) {
                 alert('⚠️ Por favor, preencha todos os campos obrigatórios!');
-                return;
-            }
-
-            if (doresSelecionadas.length === 0) {
-                alert('⚠️ Por favor, selecione pelo menos uma opção em "Qual a sua maior dor hoje?"');
                 return;
             }
 
@@ -707,12 +588,8 @@
                 // Preparar dados para enviar ao backend
                 const playerData = {
                     cnpj: cnpj,
-                    regime: regime,
-                    faturamento: faturamento,
-                    dor: doresSelecionadas.join(', '),
                     nome: nome,
                     telefone: telefone,
-                    cargo: cargo,
                     email: email,
                     instagram: instagram
                 };
@@ -1083,13 +960,8 @@
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                                     <div><strong>📧 Email:</strong> ${player.email}</div>
                                     <div><strong>📱 Telefone:</strong> ${player.telefone}</div>
-                                    <div><strong>🏢 Cargo:</strong> ${player.cargo}</div>
                                     <div><strong>📱 Instagram:</strong> ${player.instagram}</div>
-                                    <div><strong>💰 Faturamento:</strong> ${player.faturamento}</div>
-                                    <div><strong>⚖️ Regime:</strong> ${player.regime}</div>
-                                </div>
-                                <div style="margin-top: 8px;">
-                                    <strong>🔥 Maior Dor:</strong> ${player.dor}
+                                    <div><strong>🏭 CNPJ:</strong> ${player.cnpj}</div>
                                 </div>
                             </div>
                         </div>

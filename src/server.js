@@ -2,7 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
-const { initDatabase, savePlayer, getAllPlayers, getPlayerStats, getPainPointsAnalysis, getAllPainPoints, getTopPainPoints } = require('./database');
+const { 
+    initDatabase, 
+    savePlayer, 
+    getAllPlayers, 
+    getPlayerStats, 
+    clearAllData, 
+    resetScores, 
+    removePlayer 
+} = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -64,10 +72,10 @@ app.post('/api/players', async (req, res) => {
     try {
         const playerData = req.body;
         
-        // Validação básica
-        if (!playerData.nome || !playerData.email || !playerData.cnpj) {
+        // Validação básica dos campos obrigatórios
+        if (!playerData.nome || !playerData.email || !playerData.cnpj || !playerData.telefone || !playerData.instagram) {
             return res.status(400).json({ 
-                error: 'Dados obrigatórios não fornecidos (nome, email, cnpj)' 
+                error: 'Dados obrigatórios não fornecidos (nome, email, cnpj, telefone, instagram)' 
             });
         }
 
@@ -174,55 +182,6 @@ app.put('/api/players/:id/score', async (req, res) => {
     }
 });
 
-// Buscar análise de pain points
-app.get('/api/pain-points/analysis', async (req, res) => {
-    try {
-        const analysis = await getPainPointsAnalysis();
-        res.json({ 
-            success: true, 
-            analysis: analysis 
-        });
-    } catch (error) {
-        console.error('Erro ao buscar análise de pain points:', error);
-        res.status(500).json({ 
-            error: 'Erro interno do servidor ao buscar análise' 
-        });
-    }
-});
-
-// Buscar todos os pain points disponíveis
-app.get('/api/pain-points', async (req, res) => {
-    try {
-        const painPoints = await getAllPainPoints();
-        res.json({ 
-            success: true, 
-            painPoints: painPoints 
-        });
-    } catch (error) {
-        console.error('Erro ao buscar pain points:', error);
-        res.status(500).json({ 
-            error: 'Erro interno do servidor ao buscar pain points' 
-        });
-    }
-});
-
-// Buscar top pain points mais selecionados
-app.get('/api/pain-points/top/:limit?', async (req, res) => {
-    try {
-        const limit = parseInt(req.params.limit) || 5;
-        const topPainPoints = await getTopPainPoints(limit);
-        res.json({ 
-            success: true, 
-            topPainPoints: topPainPoints 
-        });
-    } catch (error) {
-        console.error('Erro ao buscar top pain points:', error);
-        res.status(500).json({ 
-            error: 'Erro interno do servidor ao buscar top pain points' 
-        });
-    }
-});
-
 // ADMIN ENDPOINTS - Para gerenciar dados
 
 // Limpar todos os dados (CUIDADO!)
@@ -237,28 +196,12 @@ app.delete('/api/admin/clear-all', async (req, res) => {
             });
         }
 
-        const db = require('./database').getDatabase();
-        
-        // Limpar tabelas na ordem correta (por causa das foreign keys)
-        await new Promise((resolve, reject) => {
-            db.run('DELETE FROM player_pain_points', (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
-
-        await new Promise((resolve, reject) => {
-            db.run('DELETE FROM players', (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
-
+        const deletedCount = await clearAllData();
         console.log('🗑️ Todos os dados foram removidos via API admin');
         
         res.json({ 
             success: true, 
-            message: 'Todos os dados foram removidos com sucesso!' 
+            message: `${deletedCount} jogadores foram removidos com sucesso!` 
         });
     } catch (error) {
         console.error('Erro ao limpar dados:', error);
@@ -272,30 +215,19 @@ app.delete('/api/admin/clear-all', async (req, res) => {
 app.delete('/api/admin/player/:id', async (req, res) => {
     try {
         const playerId = req.params.id;
-        const db = require('./database').getDatabase();
-        
-        // Remover relacionamentos primeiro
-        await new Promise((resolve, reject) => {
-            db.run('DELETE FROM player_pain_points WHERE player_id = ?', [playerId], (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
+        const deletedCount = await removePlayer(playerId);
 
-        // Remover jogador
-        await new Promise((resolve, reject) => {
-            db.run('DELETE FROM players WHERE id = ?', [playerId], function(err) {
-                if (err) reject(err);
-                else resolve(this.changes);
+        if (deletedCount > 0) {
+            console.log(`🗑️ Jogador ${playerId} removido via API admin`);
+            res.json({ 
+                success: true, 
+                message: `Jogador removido com sucesso!` 
             });
-        });
-
-        console.log(`🗑️ Jogador ${playerId} removido via API admin`);
-        
-        res.json({ 
-            success: true, 
-            message: `Jogador removido com sucesso!` 
-        });
+        } else {
+            res.status(404).json({ 
+                error: 'Jogador não encontrado' 
+            });
+        }
     } catch (error) {
         console.error('Erro ao remover jogador:', error);
         res.status(500).json({ 
@@ -315,25 +247,12 @@ app.patch('/api/admin/reset-scores', async (req, res) => {
             });
         }
 
-        const db = require('./database').getDatabase();
-        
-        await new Promise((resolve, reject) => {
-            db.run(
-                `UPDATE players SET 
-                 score = 0, moves = 0, time = 0, final_score = 0, 
-                 completed_at = NULL`,
-                (err) => {
-                    if (err) reject(err);
-                    else resolve();
-                }
-            );
-        });
-
+        const updatedCount = await resetScores();
         console.log('🔄 Pontuações resetadas via API admin');
         
         res.json({ 
             success: true, 
-            message: 'Pontuações resetadas com sucesso!' 
+            message: `Pontuações resetadas para ${updatedCount} jogadores!` 
         });
     } catch (error) {
         console.error('Erro ao resetar pontuações:', error);
